@@ -17,7 +17,7 @@
     "openai": "^4.26.0",
     "p-limit": "^4.0.0",
     "config": "^3.3.9",
-    "json2csv": "^6.0.0"
+    "json2csv": "^5.0.7"
   },
   "devDependencies": {
     "vitest": "^0.34.6",
