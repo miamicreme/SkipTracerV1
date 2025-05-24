@@ -1,61 +1,100 @@
-import { createQueue } from '../services/queue.js';
-import { fetchHtml } from '../services/scraper.js';
-import * as parsers from '../parsers/index.js';
+import { createQueue }              from '../services/queue.js';
+import { fetchHtml }                from '../services/scraper.js';
+import { getParsersForMode }        from '../parsers/index.js';
 import { Parser as Json2csvParser } from 'json2csv';
-import { mergeRecords } from '../services/mergeRecords.js';
-import { validateJobInput } from '../utils/validators.js';
-import { log } from '../utils/logger.js';
+import { mergeRecords }             from '../services/mergeRecords.js';
+import { validateJobInput }         from '../utils/validators.js';
+import { log }                      from '../utils/logger.js';
 
-const memoryStore = new Map();
+// jobId → { status: 'pending'|'completed', data: Array }
+export const memoryStore = new Map();
 
+/**
+ * Initiates a skip-trace job: queues targets, scrapes data, merges results.
+ */
 export async function runJob(req, res) {
+  const jobId = res.locals.jobId;
   try {
     const body = validateJobInput(req.body);
-    const queue = createQueue();
-    const results = [];
 
+    // Mark job as pending
+    memoryStore.set(jobId, { status: 'pending' });
+
+    const queue   = createQueue();
+    const results = [];
     const targets = buildTargets(body);
-    for (const t of targets) {
-      const parserList = parsers.getParsersForMode(t.mode);
-      for (const p of parserList) {
+
+    for (const { mode, value } of targets) {
+      const parsers = getParsersForMode(mode);
+      for (const parser of parsers) {
         queue.push(async () => {
           try {
-            const html = await fetchHtml(p.urlBuilder(t.value));
-            const rec = await p.parse(html, t);
+            const html = await fetchHtml(parser.urlBuilder(value));
+            const rec  = await parser.parse(html, { mode, value });
             results.push(rec);
           } catch (err) {
-            log('scrape error', err.message);
+            log(`Parser error (${parser.source || parser.name}):`, err.message);
           }
         });
       }
     }
+
+    // Run all queued tasks
     await queue.runAll();
+
+    // Merge records and mark job completed
     const merged = mergeRecords(results);
-    memoryStore.set(res.locals.jobId, merged);
-    res.json({ jobId: res.locals.jobId, count: merged.length });
+    memoryStore.set(jobId, { status: 'completed', data: merged });
+
+    // Respond with jobId & count
+    res.json({ jobId, count: merged.length });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 }
 
+/**
+ * Returns job results in JSON or CSV format.
+ */
 export function downloadJob(req, res) {
   const jobId = req.params.id;
-  const rows = memoryStore.get(jobId);
-  if (!rows) return res.status(404).send('Not found');
+  const job   = memoryStore.get(jobId);
+
+  // 404 if job not found or still pending
+  if (!job || job.status !== 'completed') {
+    return res.status(404).json({ error: 'Not found or not completed' });
+  }
+
+  const rows   = job.data;
   const format = req.query.format;
-if(format==='csv'){
-  const parser = new Json2csvParser({fields:['fullName','age','phones','emails','addressCurrent','addressPrevious']});
-  const csv = parser.parse(rows);
-  res.setHeader('Content-Type','text/csv');
-  return res.send(csv);
-}
-  res.json(rows);
+
+  if (format === 'csv') {
+    const parser = new Json2csvParser({
+      fields: [
+        'fullName',
+        'age',
+        'phones',
+        'emails',
+        'addressCurrent',
+        'addressPrevious',
+      ],
+    });
+    const csv = parser.parse(rows);
+    res.setHeader('Content-Type', 'text/csv');
+    return res.send(csv);
+  }
+
+  // Default JSON response
+  res.json({ count: rows.length, results: rows });
 }
 
+/**
+ * Builds a list of scraping targets from the input payload.
+ */
 function buildTargets(body) {
   const arr = [];
-  if (body.phones) body.phones.forEach(p => arr.push({ mode:'PHONE', value:p }));
-  if (body.addresses) body.addresses.forEach(a => arr.push({ mode:'ADDR', value:a }));
-  if (body.names) body.names.forEach(n => arr.push({ mode:'NAME', value:n }));
+  (body.phones    || []).forEach(p => arr.push({ mode: 'PHONE', value: p }));
+  (body.addresses || []).forEach(a => arr.push({ mode: 'ADDR',  value: a }));
+  (body.names     || []).forEach(n => arr.push({ mode: 'NAME',  value: n }));
   return arr;
 }
