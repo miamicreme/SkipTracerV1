@@ -1,8 +1,15 @@
-import * as tps from './truepeoplesearch.js';
-import * as fps from './fastpeoplesearch.js';
+import tps         from './truepeoplesearch.js';
+import fps         from './fastpeoplesearch.js';
+import spokeo      from './spokeo.js';
+import beenVerified from './beenVerified.js';
+import whitepages  from './whitepages.js';
+import zaba        from './zabasearch.js';
 
-const registry = [tps, fps];
-
-export function getParsersForMode(mode){
-  return registry.filter(p=>p.modes.includes(mode));
-}
+export const registry = [
+  tps,
+  fps,
+  spokeo,
+  beenVerified,
+  whitepages,
+  zaba,
+];
