@@ -1,5 +1,4 @@
 import * as cheerio from 'cheerio';
-
 export const modes = ['PHONE','NAME','ADDR'];
 
 export function urlBuilder(value) {
