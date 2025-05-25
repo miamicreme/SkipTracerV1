@@ -40,13 +40,8 @@ export function parse(html) {
   // Extract fields
   const fullName =
     person?.name || $('h1').first().text().trim() || '';
-  const age =
-    person?.age ||
-    parseInt(
-      ($('span:contains("Age")').text().match(/(\d+)/) || [])[0],
-      10
-    ) ||
-    null;
+  const ageMatch = $('span:contains("Age")').text().match(/(\d+)/);
+  const age = ageMatch ? parseInt(ageMatch[1], 10) : null;
 
   const phones = [];
   $('a[href^="tel:"]').each((i, el) => {
@@ -64,9 +59,7 @@ export function parse(html) {
     addressCurrent =
       typeof addr === 'string'
         ? addr
-        : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${
-            addr.addressRegion || ''
-          } ${addr.postalCode || ''}`.trim();
+        : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${addr.addressRegion || ''} ${addr.postalCode || ''}`.trim();
   } else {
     addressCurrent = $('div:contains("Current Address")')
       .next()
@@ -77,10 +70,13 @@ export function parse(html) {
   return {
     source: 'Spokeo',
     fullName,
-    age: age ? parseInt(age, 10) : null,
+    age,
     phones,
     emails,
     addressCurrent,
     addressPrevious: []
   };
 }
+
+// Default export for ESM imports
+export default { modes, urlBuilder, parse };
