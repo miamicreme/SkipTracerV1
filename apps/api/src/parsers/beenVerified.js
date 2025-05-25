@@ -75,3 +75,6 @@ export function parse(html) {
     addressPrevious: []
   };
 }
+
+// Add default export to satisfy ESM default import
+export default { modes, urlBuilder, parse };
