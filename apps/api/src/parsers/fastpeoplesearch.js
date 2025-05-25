@@ -6,67 +6,75 @@ export function urlBuilder(value) {
   const digitsOnly = value.replace(/[^0-9]/g, '');
   // Phone lookup
   if (digitsOnly.length >= 7) {
-    return `https://www.fastpeoplesearch.com/phone/${digitsOnly}`;
+    return `https://www.spokeo.com/phone/${digitsOnly}`;
   }
   // Address lookup
-  if (/\d+\s+/.test(value)) {
+  if (value.match(/\d+\s/)) {
     const slug = encodeURIComponent(
       value.toLowerCase().trim().replace(/\s+/g, '-')
     );
-    return `https://www.fastpeoplesearch.com/address/${slug}`;
+    return `https://www.spokeo.com/address/${slug}`;
   }
   // Name lookup
   const nameSlug = encodeURIComponent(
     value.toLowerCase().trim().replace(/\s+/g, '-')
   );
-  return `https://www.fastpeoplesearch.com/people/${nameSlug}`;
+  return `https://www.spokeo.com/people/${nameSlug}`;
 }
 
 export function parse(html) {
   const $ = cheerio.load(html);
-  // Attempt JSON-LD
-  let profile = null;
+  // Try JSON-LD
+  let person = null;
   $('script[type="application/ld+json"]').each((i, el) => {
     try {
       const json = JSON.parse($(el).html());
-      if (json['@type'] === 'Person') profile = json;
-    } catch {}
+      if (json['@type'] === 'Person') {
+        person = json;
+      }
+    } catch (e) {
+      // ignore
+    }
   });
 
-  // Name and basic info
-  const fullName = profile?.name || $('h1').first().text().trim() || '';
+  // Extract fields
+  const fullName =
+    person?.name || $('h1').first().text().trim() || '';
   const ageMatch = $('span:contains("Age")').text().match(/(\d+)/);
   const age = ageMatch ? parseInt(ageMatch[1], 10) : null;
 
-  // Phones
   const phones = [];
   $('a[href^="tel:"]').each((i, el) => phones.push($(el).text().trim()));
 
-  // Emails
   const emails = [];
   $('a[href^="mailto:"]').each((i, el) => emails.push($(el).text().trim()));
 
-  // Current address
-  let currentAddress = '';
-  if (profile?.address) {
-    const addr = profile.address;
-    currentAddress = typeof addr === 'string'
-      ? addr
-      : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${addr.addressRegion || ''} ${addr.postalCode || ''}`.trim();
+  let addressCurrent = '';
+  if (person?.address) {
+    const addr = person.address;
+    addressCurrent =
+      typeof addr === 'string'
+        ? addr
+        : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${
+            addr.addressRegion || ''
+          } ${addr.postalCode || ''}`.trim();
   } else {
-    currentAddress = $('div:contains("Current Address")').next().text().trim();
+    addressCurrent = $('div:contains("Current Address")')
+      .next()
+      .text()
+      .trim();
   }
 
   return {
-    source: 'FastPeopleSearch',
+    source: 'Spokeo',
     fullName,
     age,
     phones,
     emails,
-    addressCurrent: currentAddress,
+    addressCurrent,
     addressPrevious: []
   };
 }
 
-// Default export for ESM imports
+// Default export for ESM default imports
 export default { modes, urlBuilder, parse };
