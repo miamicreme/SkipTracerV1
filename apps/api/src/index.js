@@ -21,7 +21,6 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
   res.locals.jobId = randomUUID();
   next();
-});
 
 // Health check endpoint
 app.get('/healthz', (_, res) => res.send('ok'));
@@ -30,7 +29,6 @@ app.get('/healthz', (_, res) => res.send('ok'));
 app.post('/run', runJob);
 
   res.json({ status: job.status, count: job.data?.length || 0 });
-});
 
 // Download results in JSON or CSV
 
