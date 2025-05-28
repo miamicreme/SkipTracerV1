@@ -18,7 +18,8 @@
     "express": "^4.19.2",
     "openai": "^4.6.0",
     "p-limit": "^4.0.0",
-    "json2csv": "^5.0.7"
+    "json2csv": "^5.0.7",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "vitest": "^0.34.6",
