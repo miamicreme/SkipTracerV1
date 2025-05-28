@@ -5,3 +5,4 @@ export async function parse(html, context={}) {
   // TODO: implement selector extraction
   return { source: 'STUB', phones: [], emails: [], name: '', address: '' };
 }
+export default { urlBuilder, parse };

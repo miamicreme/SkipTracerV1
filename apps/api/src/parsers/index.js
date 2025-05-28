@@ -13,3 +13,4 @@ export const registry = [
   whitepages,
   zaba,
 ];
+export default { urlBuilder, parse };
