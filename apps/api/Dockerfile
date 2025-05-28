@@ -9,6 +9,7 @@ RUN npm install --omit=dev
 # Copy source code
 COPY src ./src
 COPY healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY public ./public
 
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
