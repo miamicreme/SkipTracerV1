@@ -1,7 +1,22 @@
-import * as cheerio from 'cheerio';
-export const modes = ['PHONE','NAME','ADDR'];
-export async function parse(html, context={}) {
-  const $ = cheerio.load(html);
-  // TODO: implement selector extraction
-  return { source: 'STUB', phones: [], emails: [], name: '', address: '' };
+import axios from 'axios';
+import cheerio from 'cheerio';
+
+export function urlBuilder({ query }) {
+  return `https://www.thatsthem.com/search?q=${encodeURIComponent(query)}`;
 }
+
+export async function parse(html) {
+  try {
+    const $ = cheerio.load(html);
+    // TODO: implement actual parsing logic for thatsthem
+    const results = [];
+    $('div.result').each((i, el) => {
+      results.push($(el).text().trim());
+    });
+    return { results };
+  } catch (error) {
+    throw new Error(`thatsthem parse error: ${error.message}`);
+  }
+}
+
+export default { urlBuilder, parse };
