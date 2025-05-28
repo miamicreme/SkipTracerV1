@@ -2,14 +2,18 @@
 
 import 'dotenv/config';
 import express from 'express';
-import bodyParser from 'body-parser';
+import bodyParser
+import cors from 'cors';
+import path from 'path'; from 'body-parser';
 import { runJob } from './controllers/job.controller.js';
 
 const app = express();
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 // Parse JSON bodies
 app.use(bodyParser.json());
+app.use(express.static(path.resolve(process.cwd(), 'public')));
 
 // Main endpoint: runs all parsers, invokes AI, returns the ranked file
 app.post('/run', async (req, res) => {
