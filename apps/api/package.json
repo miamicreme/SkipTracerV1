@@ -1,0 +1,25 @@
+{
+  "name": "skiptrace-verifier-api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "vitest run",
+    "lint": "echo \"No linter configured\""
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.0",
+    "express": "^4.19.2",
+    "openai": "^4.26.0",
+    "p-limit": "^4.0.0",
+    "json2csv": "^5.0.7"
+  },
+  "devDependencies": {
+    "vitest": "^0.34.6",
+    "nodemon": "^3.1.0"
+  }
+}
