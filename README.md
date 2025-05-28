@@ -1,33 +1,18 @@
-# SkipTracerV1 - Production Ready
+# SkipTracerV1 - Production Ready with ScraperAPI
 
-## Setup
+## ScraperAPI Integration
 
-1. **Install dependencies**  
-   ```bash
-   cd apps/api
-   npm install
-   cd ../../
-   npm install
+This version proxies all HTTP requests through [ScraperAPI](https://www.scraperapi.com) to handle IP rotation, CAPTCHA, and anti-bot measures.
+
+1. **Set your ScraperAPI key** in `.env`:
+   ```
+   SCRAPERAPI_KEY=your_scraperapi_key_here
    ```
 
-2. **Configure environment**  
-   Copy `.env.example` to `.env` and fill in your API keys.
+2. **Axios is configured automatically** via an interceptor in `apps/api/src/index.js`.
 
-3. **Run locally**  
-   ```bash
-   docker-compose up
-   ```
 
-4. **Deploy**  
-   - API: Push to Render, use Dockerfile in `apps/api`.  
-   - Frontend: Deploy static on Vercel, use `apps/web`.
 
-## Parser Improvements
+# SkipTrace Verifier Real
 
-- **FastPeopleSearch**: Real parsing of name, age, phones, and address history.  
-- **Other parsers**: Stub implementations with TODOs to add specific selector logic.
-
-## Error Handling
-
-- All parsers throw descriptive errors.  
-- Job controller has global try/catch for HTTP 500 responses.
+Production-ready skeleton. See docs/ for details.

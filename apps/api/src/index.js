@@ -1,3 +1,13 @@
+import 'dotenv/config';
+import axios from 'axios';
+
+// Route all axios requests through ScraperAPI
+axios.interceptors.request.use(config => {
+  const target = config.url;
+  config.url = `http://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(target)}`;
+  return config;
+}, error => Promise.reject(error));
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import { runJob, downloadJob, memoryStore } from './controllers/job.controller.js';
