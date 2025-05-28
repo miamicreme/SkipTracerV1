@@ -29,9 +29,6 @@ app.get('/healthz', (_, res) => res.send('ok'));
 // Start a new skip-trace job
 app.post('/run', runJob);
 
-// Pollable status endpoint
-  const job = memoryStore.get(req.params.id);
-  if (!job) return res.status(404).json({ status: 'not found' });
   res.json({ status: job.status, count: job.data?.length || 0 });
 });
 
