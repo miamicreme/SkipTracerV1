@@ -1,28 +1,54 @@
-// apps/api/src/parsers/whitepages.js
-
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+export const modes = ['PHONE', 'NAME', 'ADDR'];
+
 /**
- * Build the search URL for Whitepages
+ * Build the search URL based on input.
  */
-export function urlBuilder({ query }) {
-  // e.g. query = phone number, name, or address
-  return `https://www.whitepages.com/search?${encodeURIComponent(query)}`;
+export function urlBuilder({ query, firstName, lastName }) {
+  if (query && /\d{7,}/.test(query)) {
+    const digits = query.replace(/[^0-9]/g, '');
+    return `https://www.example.com/phone/${digits}`;
+  }
+  if (query && /\d+\s+/.test(query)) {
+    const slug = encodeURIComponent(query.trim().replace(/\s+/g, '-').toLowerCase());
+    return `https://www.example.com/address/${slug}`;
+  }
+  if (firstName && lastName) {
+    const slug = encodeURIComponent(`${firstName.trim()}-${lastName.trim()}`.toLowerCase());
+    return `https://www.example.com/name/${slug}`;
+  }
+  throw new Error('Invalid input for urlBuilder');
 }
 
-export async function parse(html) {
+/**
+ * Parse HTML and extract structured data.
+ */
+export async function parse(html, context = {}) {
   try {
     const $ = cheerio.load(html);
-    // TODO: implement actual scraping logic for phone, name, address, etc.
-    const results = [];
-    $('div.result').each((i, el) => {
-      results.push($(el).text().trim());
-    });
-    return { results };
+
+    const phones = [];
+    $('a[href^="tel:"]').each((_, el) => phones.push($(el).text().trim()));
+
+    const emails = [];
+    $('a[href^="mailto:"]').each((_, el) => emails.push($(el).text().trim()));
+
+    const name = $('h1').first().text().trim() || context.name || '';
+    const address = $('div.address').first().text().trim() || context.address || '';
+
+    return {
+      source: 'STUB',
+      phones,
+      emails,
+      name,
+      address
+    };
   } catch (error) {
-    throw new Error(`whitepages parse error: ${error.message}`);
+    throw new Error(`Parser error: ${error.message}`);
   }
 }
 
-export default { urlBuilder, parse };
+// Default export for ESM imports
+export default { modes, urlBuilder, parse };

@@ -8,3 +8,8 @@ RUN chmod +x /usr/local/bin/healthcheck.sh
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
   CMD /usr/local/bin/healthcheck.sh || exit 1
 CMD ["node", "src/index.js"]
+
+# Expose and start
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=5s CMD /usr/local/bin/healthcheck.sh || exit 1
+CMD ["npm", "start"]

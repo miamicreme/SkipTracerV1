@@ -7,14 +7,16 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "vitest run",
-    "lint": "echo \"No linter configured\""
+    "lint": "echo \"No linter configured\"",
+    "aggregate": "node src/runAllParsers.js",
+    "process-ai": "node src/processWithAI.js"
   },
   "dependencies": {
     "axios": "^1.6.7",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.0.0",
     "express": "^4.19.2",
-    "openai": "^4.26.0",
+    "openai": "^4.6.0",
     "p-limit": "^4.0.0",
     "json2csv": "^5.0.7"
   },

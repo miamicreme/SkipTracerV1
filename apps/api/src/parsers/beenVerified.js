@@ -1,80 +1,54 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export const modes = ['PHONE', 'NAME', 'ADDR'];
 
-export function urlBuilder(value) {
-  const digitsOnly = value.replace(/[^0-9]/g, '');
-  // Phone lookup
-  if (digitsOnly.length >= 7) {
-    return `https://www.beenverified.com/phone/${digitsOnly}`;
+/**
+ * Build the search URL based on input.
+ */
+export function urlBuilder({ query, firstName, lastName }) {
+  if (query && /\d{7,}/.test(query)) {
+    const digits = query.replace(/[^0-9]/g, '');
+    return `https://www.example.com/phone/${digits}`;
   }
-  // Address lookup
-  if (/\d+\s+/.test(value)) {
-    const slug = encodeURIComponent(
-      value.toLowerCase().trim().replace(/\s+/g, '-')
-    );
-    return `https://www.beenverified.com/address/${slug}`;
+  if (query && /\d+\s+/.test(query)) {
+    const slug = encodeURIComponent(query.trim().replace(/\s+/g, '-').toLowerCase());
+    return `https://www.example.com/address/${slug}`;
   }
-  // Name lookup
-  const nameSlug = encodeURIComponent(
-    value.toLowerCase().trim().replace(/\s+/g, '-')
-  );
-  return `https://www.beenverified.com/people/${nameSlug}`;
+  if (firstName && lastName) {
+    const slug = encodeURIComponent(`${firstName.trim()}-${lastName.trim()}`.toLowerCase());
+    return `https://www.example.com/name/${slug}`;
+  }
+  throw new Error('Invalid input for urlBuilder');
 }
 
-export function parse(html) {
-  const $ = cheerio.load(html);
-  // Attempt JSON-LD extraction
-  let profile = null;
-  $('script[type="application/ld+json"]').each((i, el) => {
-    try {
-      const json = JSON.parse($(el).html());
-      if (json['@type'] === 'Person') {
-        profile = json;
-      }
-    } catch (err) {
-      // ignore parse errors
-    }
-  });
+/**
+ * Parse HTML and extract structured data.
+ */
+export async function parse(html, context = {}) {
+  try {
+    const $ = cheerio.load(html);
 
-  const fullName =
-    profile?.name || $('h1.profile-name').text().trim() || '';
-  const ageMatch = $('span.age').text().match(/(\d+)/);
-  const age = ageMatch ? parseInt(ageMatch[1], 10) : null;
+    const phones = [];
+    $('a[href^="tel:"]').each((_, el) => phones.push($(el).text().trim()));
 
-  const phones = [];
-  $('a[href^="tel:"]').each((i, el) => {
-    phones.push($(el).text().trim());
-  });
+    const emails = [];
+    $('a[href^="mailto:"]').each((_, el) => emails.push($(el).text().trim()));
 
-  const emails = [];
-  $('a[href^="mailto:"]').each((i, el) => {
-    emails.push($(el).text().trim());
-  });
+    const name = $('h1').first().text().trim() || context.name || '';
+    const address = $('div.address').first().text().trim() || context.address || '';
 
-  let currentAddress = '';
-  if (profile?.address) {
-    const addr = profile.address;
-    currentAddress =
-      typeof addr === 'string'
-        ? addr
-        : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${
-            addr.addressRegion || ''
-          } ${addr.postalCode || ''}`.trim();
-  } else {
-    currentAddress = $('div.current-address').text().trim();
+    return {
+      source: 'STUB',
+      phones,
+      emails,
+      name,
+      address
+    };
+  } catch (error) {
+    throw new Error(`Parser error: ${error.message}`);
   }
-
-  return {
-    source: 'BeenVerified',
-    fullName,
-    age,
-    phones,
-    emails,
-    addressCurrent: currentAddress,
-    addressPrevious: []
-  };
 }
 
-// Add default export to satisfy ESM default import
+// Default export for ESM imports
 export default { modes, urlBuilder, parse };

@@ -1,99 +1,54 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export const modes = ['PHONE', 'NAME', 'ADDR'];
 
 /**
- * Build the TruePeopleSearch URL based on the input value.
- * Supports phone lookup, address lookup, and name lookup.
+ * Build the search URL based on input.
  */
-export function urlBuilder(value) {
-  const digitsOnly = String(value).replace(/[^0-9]/g, '');
-
-  // Phone lookup (at least 7 digits)
-  if (digitsOnly.length >= 7) {
-    return `https://www.truepeoplesearch.com/phone/${digitsOnly}`;
+export function urlBuilder({ query, firstName, lastName }) {
+  if (query && /\d{7,}/.test(query)) {
+    const digits = query.replace(/[^0-9]/g, '');
+    return `https://www.example.com/phone/${digits}`;
   }
-
-  // Address lookup (detect numeric street numbers)
-  if (/\d+\s+/.test(value)) {
-    const slug = encodeURIComponent(
-      value.toLowerCase().trim().replace(/\s+/g, '-')
-    );
-    return `https://www.truepeoplesearch.com/address/${slug}`;
+  if (query && /\d+\s+/.test(query)) {
+    const slug = encodeURIComponent(query.trim().replace(/\s+/g, '-').toLowerCase());
+    return `https://www.example.com/address/${slug}`;
   }
-
-  // Name lookup
-  const nameSlug = encodeURIComponent(
-    value.toLowerCase().trim().replace(/\s+/g, '-')
-  );
-  return `https://www.truepeoplesearch.com/people/${nameSlug}`;
+  if (firstName && lastName) {
+    const slug = encodeURIComponent(`${firstName.trim()}-${lastName.trim()}`.toLowerCase());
+    return `https://www.example.com/name/${slug}`;
+  }
+  throw new Error('Invalid input for urlBuilder');
 }
 
 /**
- * Parse the HTML response from TruePeopleSearch and extract structured data.
+ * Parse HTML and extract structured data.
  */
-export function parse(html) {
+export async function parse(html, context = {}) {
   try {
     const $ = cheerio.load(html);
-    let profile = null;
 
-    // JSON-LD extraction (Person type)
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const json = JSON.parse($(el).html() || '');
-        if (json['@type'] === 'Person') {
-          profile = json;
-        }
-      } catch {
-        // ignore malformed JSON
-      }
-    });
-
-    // Name
-    const fullName = profile?.name || $('h1').first().text().trim() || '';
-
-    // Age
-    const ageText = $('span:contains("Age")').text();
-    const ageMatch = ageText.match(/(\d+)/);
-    const age = ageMatch ? parseInt(ageMatch[1], 10) : null;
-
-    // Phones
     const phones = [];
-    $('a[href^="tel:"]').each((_, el) => {
-      phones.push($(el).text().trim());
-    });
+    $('a[href^="tel:"]').each((_, el) => phones.push($(el).text().trim()));
 
-    // Emails
     const emails = [];
-    $('a[href^="mailto:"]').each((_, el) => {
-      emails.push($(el).text().trim());
-    });
+    $('a[href^="mailto:"]').each((_, el) => emails.push($(el).text().trim()));
 
-    // Current address
-    let addressCurrent = '';
-    if (profile?.address) {
-      const addr = profile.address;
-      addressCurrent =
-        typeof addr === 'string'
-          ? addr
-          : `${addr.streetAddress || ''} ${addr.addressLocality || ''} ${addr.addressRegion || ''} ${addr.postalCode || ''}`.trim();
-    } else {
-      addressCurrent = $('div:contains("Current Address")').next().text().trim();
-    }
+    const name = $('h1').first().text().trim() || context.name || '';
+    const address = $('div.address').first().text().trim() || context.address || '';
 
     return {
-      source: 'TruePeopleSearch',
-      fullName,
-      age,
+      source: 'STUB',
       phones,
       emails,
-      addressCurrent,
-      addressPrevious: []
+      name,
+      address
     };
   } catch (error) {
-    throw new Error(`TruePeopleSearch parse error: ${error.message}`);
+    throw new Error(`Parser error: ${error.message}`);
   }
 }
 
-// Default export: include every export
+// Default export for ESM imports
 export default { modes, urlBuilder, parse };
