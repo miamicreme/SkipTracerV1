@@ -2,7 +2,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
 import { getParsersForMode } from './parsers/index.js';
-import 'dotenv/config';
 
 /**
  * Run all parsers for given mode and query object, save raw JSON to file.
@@ -13,9 +12,20 @@ import 'dotenv/config';
 export async function aggregate(mode, queryObj, outFile = 'raw-results.json') {
   const parsers = getParsersForMode(mode);
   const results = [];
+  // Normalize input value
+  const value = typeof queryObj === 'string'
+    ? queryObj
+    : (queryObj.query && typeof queryObj.query === 'string')
+      ? queryObj.query
+      : null;
+
   for (const parser of parsers) {
-    const url = parser.urlBuilder(queryObj);
     try {
+      const url = parser.urlBuilder(
+        parser.urlBuilder.length > 1
+          ? { query: value, ...queryObj }
+          : value
+      );
       const { data: html } = await axios.get(url);
       const parsed = await parser.parse(html, queryObj);
       results.push({ parser: parser.urlBuilder.name, data: parsed });
