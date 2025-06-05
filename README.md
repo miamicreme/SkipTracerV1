@@ -6,7 +6,7 @@ This version proxies all HTTP requests through [ScraperAPI](https://www.scrapera
 
 1. **Set your ScraperAPI key** in `.env`:
    ```
-   SCRAPERAPI_KEY=your_scraperapi_key_here
+   SCRAPER_API_KEY=your_scraperapi_key_here
    ```
 
 2. **Axios is configured automatically** via an interceptor in `apps/api/src/index.js`.
