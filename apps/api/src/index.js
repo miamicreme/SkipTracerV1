@@ -5,7 +5,27 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
+import axios from 'axios';
 import { runJob } from './controllers/job.controller.js';
+
+// Configure Axios to route requests through ScraperAPI when configured
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+const SCRAPER_API_BASE = process.env.SCRAPER_API_BASE ?? 'http://api.scraperapi.com';
+if (SCRAPER_API_KEY) {
+  axios.interceptors.request.use((config) => {
+    const method = config.method ? config.method.toLowerCase() : 'get';
+    if (method === 'get' && /^https?:/i.test(config.url) && !config.url.startsWith(SCRAPER_API_BASE)) {
+      const params = new URLSearchParams({
+        api_key: SCRAPER_API_KEY,
+        url: config.url,
+        render: 'true',
+        keep_headers: 'true',
+      });
+      config.url = `${SCRAPER_API_BASE}?${params.toString()}`;
+    }
+    return config;
+  }, error => Promise.reject(error));
+}
 
 const app = express();
 app.use(cors());
