@@ -5,9 +5,8 @@ export const modes = ['PHONE', 'NAME', 'ADDR'];
 
 /**
  * Build the AnyWho search URL.
- * Accepts either:
- *   - a string (the raw query), or
- *   - an object { query, firstName, lastName }
+ *
+ * @param {object} input - `{ query, firstName, lastName }`
  */
 export function urlBuilder(input) {
   const value =
