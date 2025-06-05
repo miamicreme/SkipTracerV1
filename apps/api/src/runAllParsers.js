@@ -4,30 +4,32 @@ import axios from 'axios';
 import { getParsersForMode } from './parsers/index.js';
 
 /**
- * Run all parsers for given mode and query object, save raw JSON to file.
- * @param {string} mode - e.g. 'PHONE','NAME','ADDR'
- * @param {object} queryObj - { query } or { firstName, lastName }
+ * Run all parsers for the given mode and query, saving raw JSON to file.
+ *
+ * @param {string} mode - e.g. 'PHONE', 'NAME', 'ADDR'
+ * @param {string|object} queryObj - a raw query string or an object such as
+ *   `{ firstName, lastName }` or `{ query }`
  * @param {string} outFile - output filename
  */
 export async function aggregate(mode, queryObj, outFile = 'raw-results.json') {
   const parsers = getParsersForMode(mode);
   const results = [];
-  // Normalize input value
+  // Normalize input so parsers always receive an object
   const value = typeof queryObj === 'string'
     ? queryObj
     : (queryObj.query && typeof queryObj.query === 'string')
       ? queryObj.query
       : null;
+  const ctx =
+    typeof queryObj === 'object'
+      ? { query: value, ...queryObj }
+      : { query: value };
 
   for (const parser of parsers) {
     try {
-      const url = parser.urlBuilder(
-        parser.urlBuilder.length > 1
-          ? { query: value, ...queryObj }
-          : value
-      );
+      const url = parser.urlBuilder(ctx);
       const { data: html } = await axios.get(url);
-      const parsed = await parser.parse(html, queryObj);
+      const parsed = await parser.parse(html, ctx);
       results.push({ parser: parser.urlBuilder.name, data: parsed });
     } catch (err) {
       results.push({ parser: parser.urlBuilder.name, error: err.message });
