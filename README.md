@@ -27,13 +27,14 @@ REDIS_URL=redis://user:pass@host:port/0
 ```
 
 2. Deploy API:
-   - Uses Dockerfile in `apps/api`
-   - Exposes port 3000
-   - Healthcheck via `healthcheck.sh`
+   - Install dependencies and start the service:
+     ```
+     cd apps/api && npm install && npm start
+     ```
+   - A Dockerfile is provided in `apps/api` for container deployments.
+   - The server listens on port `3000` and exposes a `/health` endpoint used by
+     `healthcheck.sh`.
 
-3. Deploy Web:
-   - Static build in `apps/web`
-
-4. Parsers:
+3. Parsers:
    - Updated stubs in `apps/api/src/parsers`
    - Dispatch in `parsers/index.js`
