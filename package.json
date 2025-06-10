@@ -1,5 +1,8 @@
 {
   "name": "skiptracer-root",
   "private": true,
-  "workspaces": ["apps/api"]
+  "workspaces": [
+    "apps/api",
+    "apps/frontend"
+  ]
 }
