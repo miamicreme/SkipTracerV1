@@ -23,24 +23,60 @@
     <input id="query" placeholder="Enter query" style="width:300px;">
   </label>
   <button id="run">Run</button>
+  <div id="connection" style="margin-top:10px;color:green;"></div>
+  <progress id="progress" value="0" max="100" style="width:300px;display:none;"></progress>
   <pre id="output"></pre>
 
   <script>
+  async function checkConnection(){
+    const conn = document.getElementById('connection');
+    try{
+      const res = await fetch('/health');
+      conn.textContent = res.ok ? 'Connection live' : 'Connection failed';
+      conn.style.color = res.ok ? 'green' : 'red';
+    }catch(err){
+      conn.textContent = 'Connection failed';
+      conn.style.color = 'red';
+    }
+  }
+
+  checkConnection();
+
   document.getElementById('run').onclick = async () => {
     const mode = document.getElementById('mode').value;
     const q = document.getElementById('query').value.trim();
     const out = document.getElementById('output');
+    const progress = document.getElementById('progress');
     if(!q){ out.textContent = 'Enter a query'; return; }
     try{
+      progress.style.display = 'block';
+      progress.value = 0;
       const res = await fetch('/run', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({mode, query:{query:q}})
       });
-      const text = await res.text();
+      const reader = res.body.getReader();
+      const len = parseInt(res.headers.get('Content-Length')) || 0;
+      let received = 0;
+      const chunks = [];
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        chunks.push(value);
+        received += value.length;
+        if(len){
+          progress.value = Math.round(received/len*100);
+        }
+      }
+      progress.value = 100;
+      const blob = new Blob(chunks);
+      const text = await blob.text();
       out.textContent = text;
+      progress.style.display = 'none';
     }catch(err){
       out.textContent = 'Error: ' + err;
+      progress.style.display = 'none';
     }
   };
   </script>
