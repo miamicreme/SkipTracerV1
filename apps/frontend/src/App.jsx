@@ -1,63 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [mode, setMode] = useState('PHONE');
   const [query, setQuery] = useState('');
   const [result, setResult] = useState('');
+  const [connection, setConnection] = useState('checking');
+  const [loading, setLoading] = useState(false);
+  const [time, setTime] = useState(null);
+
+  useEffect(() => {
+    async function check() {
+      try {
+        const res = await fetch('/health');
+        setConnection(res.ok ? 'live' : 'failed');
+      } catch {
+        setConnection('failed');
+      }
+    }
+    check();
+  }, []);
 
   const run = async () => {
     if (!query.trim()) {
       setResult('Please enter a query.');
       return;
     }
+    const start = Date.now();
+    setLoading(true);
+    setTime(null);
     setResult('Loading...');
     try {
       const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, query: { query } })
+        body: JSON.stringify({ mode: 'NAME', query: { query } })
       });
       const text = await res.text();
       setResult(text);
     } catch (err) {
       setResult('Error: ' + err);
+    } finally {
+      setLoading(false);
+      setTime(((Date.now() - start) / 1000).toFixed(2));
     }
   };
 
   return (
     <div className="dashboard">
-      <div className="sidebar">
+      <header>
         <h2>SkipTracer</h2>
-        <button
-          className={`mode-btn ${mode === 'PHONE' ? 'active' : ''}`}
-          onClick={() => setMode('PHONE')}
-        >
-          PHONE
-        </button>
-        <button
-          className={`mode-btn ${mode === 'NAME' ? 'active' : ''}`}
-          onClick={() => setMode('NAME')}
-        >
-          NAME
-        </button>
-        <button
-          className={`mode-btn ${mode === 'ADDR' ? 'active' : ''}`}
-          onClick={() => setMode('ADDR')}
-        >
-          ADDR
-        </button>
-      </div>
+        <span className={connection === 'live' ? 'status live' : 'status dead'}>
+          {connection === 'checking'
+            ? 'Checking...'
+            : connection === 'live'
+              ? 'Connection live'
+              : 'Connection failed'}
+        </span>
+      </header>
       <div className="main">
-        <h1>API Dashboard</h1>
         <div className="query">
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Enter phone, name or address"
+            placeholder="Search phone, name or address"
           />
-          <button onClick={run}>{mode}</button>
+          <button onClick={run} disabled={loading}>
+            {loading ? 'Searching...' : 'Search'}
+          </button>
         </div>
+        {time && <div className="timer">Time: {time}s</div>}
         <pre id="result">{result || 'Results here...'}</pre>
       </div>
     </div>
