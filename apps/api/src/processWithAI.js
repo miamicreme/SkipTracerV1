@@ -2,7 +2,18 @@ import fs from 'fs/promises';
 import OpenAI from 'openai';
 import path from 'path';
 import 'dotenv/config';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+let openai;
+function getOpenAI() {
+  if (!openai) {
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) {
+      throw new Error('OPENAI_API_KEY env var not set');
+    }
+    openai = new OpenAI({ apiKey: key });
+  }
+  return openai;
+}
 
 /**
  * Organize raw parser results with AI and output ranked JSON.
@@ -28,7 +39,7 @@ ${JSON.stringify(rawJson, null, 2)}
   ...
 ]
 `;
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "system", content: prompt }],
     temperature: 0

@@ -38,3 +38,6 @@ REDIS_URL=redis://user:pass@host:port/0
 3. Parsers:
    - Updated stubs in `apps/api/src/parsers`
    - Dispatch in `parsers/index.js`
+
+## Local Testing Frontend
+A simple HTML page is available at `apps/api/public/test.html` for manually calling the `/run` endpoint. Start the API with the required environment variables and open the page in your browser to submit queries and view the raw response.

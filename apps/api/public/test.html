@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Function Tester</title>
+  <style>
+    body{font-family:sans-serif;margin:20px;}
+    label{display:block;margin-top:10px;}
+    pre{background:#f0f0f0;border:1px solid #ccc;padding:10px;min-height:200px;}
+  </style>
+</head>
+<body>
+  <h1>API Function Tester</h1>
+  <label>Mode:
+    <select id="mode">
+      <option value="PHONE">PHONE</option>
+      <option value="NAME">NAME</option>
+      <option value="ADDR">ADDR</option>
+    </select>
+  </label>
+  <label>Query:
+    <input id="query" placeholder="Enter query" style="width:300px;">
+  </label>
+  <button id="run">Run</button>
+  <pre id="output"></pre>
+
+  <script>
+  document.getElementById('run').onclick = async () => {
+    const mode = document.getElementById('mode').value;
+    const q = document.getElementById('query').value.trim();
+    const out = document.getElementById('output');
+    if(!q){ out.textContent = 'Enter a query'; return; }
+    try{
+      const res = await fetch('/run', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({mode, query:{query:q}})
+      });
+      const text = await res.text();
+      out.textContent = text;
+    }catch(err){
+      out.textContent = 'Error: ' + err;
+    }
+  };
+  </script>
+</body>
+</html>
