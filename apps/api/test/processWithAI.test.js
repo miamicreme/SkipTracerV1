@@ -13,6 +13,8 @@ vi.mock('openai', () => {
   };
 });
 
+process.env.OPENAI_API_KEY = 'test';
+
 import { organizeAndRate } from '../src/processWithAI.js';
 
 describe('organizeAndRate', () => {
